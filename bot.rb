@@ -32,7 +32,7 @@ emojis = ['🤯', '😵‍', '💫', '😈', '🐷', '🥸', '🤗', '😶‍�
 
 bot.get_updates(fail_silently: true) do |message|
   command = message.get_command_for(bot)
-  if !command.empty?
+  if !command.nil?
     puts "@#{message.from.username}: #{message.text}"
   end
 
