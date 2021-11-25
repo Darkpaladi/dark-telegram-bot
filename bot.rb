@@ -60,10 +60,17 @@ bot.get_updates(fail_silently: true) do |message|
       when /start/i
         reply.text = hello_msg
 
+      when /greetperson/i
+        person = message.text.sub('/greetperson', '').strip
+
+        if person.empty?
+          reply.text = "No me vaciles 😡"
+        else 
+          reply.text = "#{greetings.sample.capitalize} #{person} !"
+        end
 
       when /greet/i
         reply.text = "#{greetings.sample.capitalize} #{message.from.first_name}!"
-
 
       when /set_leaderboard/i
         token = message.text.sub('/set_leaderboard', '').strip
