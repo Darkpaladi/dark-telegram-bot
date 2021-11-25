@@ -4,6 +4,24 @@ require 'net/http'
 require 'net/https'
 require 'cgi'
 require 'yaml'
+require 'sqlite3'
+
+
+leaderboards = Hash.new
+
+# Manage database
+db = SQLite3::Database.new 'leaderboards.db'
+#   Create table
+db.execute <<-SQL
+  CREATE TABLE IF NOT EXISTS leaderboards (
+      chat INT PRIMARY KEY,
+      lb_number INT UNIQUE
+  );
+SQL
+
+db.execute 'SELECT * FROM leaderboards;' do |row|
+  leaderboards[row[0]] = row[1]
+end
 
 # Get the config
 config = YAML.load_file('config.yml')
@@ -16,7 +34,6 @@ puts "Set `#{session_cookie}` as the session cookie"
 
 source = "https://adventofcode.com/#{config['keys'][0]['year']}/leaderboard/private/view/"
 
-leaderboards = Hash.new
 
 if config['messages'][0]['start'].nil?
   puts "There was not a start message in the config, using the default"
@@ -29,6 +46,7 @@ end
 bot = TelegramBot.new(token: token)
 
 emojis = ['🤯', '😵‍', '💫', '😈', '🐷', '🥸', '🤗', '😶‍🌫️', '🤖', '👾', '👽', '🤡', '👹', '💀', '🧠', '🥷🏼', '🕺🏼', '🐭', '🐹', '🐗', '🌝', '🌚', '🌈','☄️', '🧘🏼‍', '🚸']
+greetings = ['bonjour', 'hola', 'hallo', 'sveiki', 'namaste', 'salaam', 'szia', 'halo', 'ciao']
 
 bot.get_updates(fail_silently: true) do |message|
   command = message.get_command_for(bot)
@@ -44,23 +62,27 @@ bot.get_updates(fail_silently: true) do |message|
 
 
       when /greet/i
-        greetings = ['bonjour', 'hola', 'hallo', 'sveiki', 'namaste', 'salaam', 'szia', 'halo', 'ciao']
         reply.text = "#{greetings.sample.capitalize} #{message.from.first_name}!"
-        puts "Chat ID: #{message.chat.id}."
-
-
 
 
       when /set_leaderboard/i
         token = message.text.sub('/set_leaderboard', '').strip
 
+        # If no token was provided, show an error message
         if token.empty?
           reply.text = "Eeeee me estás vacilando? No me pasaste ningún token. Vuelve a intentarlo"
         else
+          # Save in temporal memory
           leaderboards[message.chat.id] = token
+
+          # Save in the SQLite3 database
+          {message.chat.id => token}.each do |pair|
+            db.execute 'INSERT INTO leaderboards VALUES (?, ?)', pair
+          end
 
           reply.text = "Okey! He guardado que a este chat le corresponde el leaderboard #{token}"
         end
+
 
 
 
@@ -70,7 +92,7 @@ bot.get_updates(fail_silently: true) do |message|
         if token.nil?
           reply.text = "Este chat no tiene configurado el token de la leaderboard privada. Configúralo usando /set_leaderboard."
         else
-          url = source + token + ".json"
+          url = source + token.to_s + ".json"
 
           uri = URI(url.to_s)
           http = Net::HTTP.new(uri.host, uri.port)
