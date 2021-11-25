@@ -15,7 +15,7 @@ db = SQLite3::Database.new 'leaderboards.db'
 db.execute <<-SQL
   CREATE TABLE IF NOT EXISTS leaderboards (
       chat INT PRIMARY KEY,
-      lb_number INT UNIQUE
+      lb_number INT
   );
 SQL
 
@@ -76,11 +76,16 @@ bot.get_updates(fail_silently: true) do |message|
           leaderboards[message.chat.id] = token
 
           # Save in the SQLite3 database
-          {message.chat.id => token}.each do |pair|
-            db.execute 'INSERT INTO leaderboards VALUES (?, ?)', pair
+          begin
+            {message.chat.id => token}.each do |pair|
+              db.execute 'INSERT INTO leaderboards VALUES (?, ?)', pair
+            end
+          rescue
+            reply.text = "No he podido insertar tu código en la base de datos, pero sí en la memoria temporal. Esto significa que cuando el bot se reinicie, esta configuración se perderá."
+          else
+            reply.text = "Okey! He guardado que a este chat le corresponde el leaderboard #{token}"
           end
 
-          reply.text = "Okey! He guardado que a este chat le corresponde el leaderboard #{token}"
         end
 
 
