@@ -1,9 +1,7 @@
 keys:
   - 
     token: ""
-    cookie: ""
-    year: 2021
 
 messages:
   - 
-    start: null
+    start: "Hiya"
