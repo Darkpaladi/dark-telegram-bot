@@ -1,2 +1,11 @@
-# Advent Of Code Telegram Bot
+# Darkpaladi's telegram bot
+
+## Current capibilities
+
+- Quote xokas
+
+## Future capibilities
+
+- Get surf forecast
+- Get crypto price
 
